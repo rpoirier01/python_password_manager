@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS master_password (
 #PW table 
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS credentials (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     website TEXT NOT NULL,
     username TEXT NOT NULL,
     password BLOB NOT NULL,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (website, username)
 )
 ''')
 
@@ -73,6 +73,11 @@ def update_credentials(old_username, old_website, new_username, new_password, ne
     ''', (new_website, new_username, new_password, old_website, old_username))
     connection.commit()
     return cursor.rowcount #return the number of rows affected
+def get_all():
+    connection = sqlite3.connect('password_manager.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM CREDENTIALS")
+    print(cursor.fetchall())
 
 def delete_credential(username, website):
     connection = sqlite3.connect('password_manager.db')

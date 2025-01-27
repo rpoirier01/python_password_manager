@@ -2,7 +2,7 @@ import getpass
 from bcrypt import hashpw, gensalt, checkpw
 from database import get_master_pw_hash, set_master_pw_hash, add_website_credentials, read_credentials_by_name_website, update_credentials, delete_credential, read_all_credentials
 from encryption import encrypt_password, decrypt_password
-
+from pw_operations import gen_password, check_pw_strth
 
 def initial_setup():
     master_pw_hash_list = get_master_pw_hash()
@@ -16,8 +16,6 @@ def initial_setup():
                 break
             else:
                 print("Incorrect password entered, try again")
-
-
     else:
         print("Before using the program, a master password must be set")
         master_pw_unhashed = getpass.getpass("Please enter a new master password: ")
@@ -26,13 +24,17 @@ def initial_setup():
 
 
 def print_options():
-    options = input("Would you like to create a new password(C), read a password(R) update an existing password(U), delete a password(D)?(C/R/U/D or full word or exit)\n")
+    # options = input("Would you like to create a new password(C), read a password(R) update an existing password(U), delete a password(D)?(C/R/U/D or full word or exit)\n")
+    options = input('''
+Would you like to create a new password(C), read a password(R), update a password(U), delete a password(D), generate a new secure password(G) or check the security of passwords(CH)?(C/R/U/D/G/CH or full word or exit)
+''')
     return options.lower()
 
 def add_new_password():
     print("To add a new password, a username, password and website are required")
     username = input("Please enter username:\n")
-    password = getpass.getpass("Please enter password:\n")
+    password = _take_password_input()
+
     website = input("Please enter the website:\n")
     if(username == None or password == None or website == None):
         print("Error, username, password and website cannot be left empty")
@@ -41,6 +43,19 @@ def add_new_password():
     add_website_credentials(username, enc_pw, website)
     print("Successfully added new credentials!")
 
+def _take_password_input():
+    password = None
+    password2 = ''
+    while(True):#Alternate do while
+        password = getpass.getpass("Please enter new password:\n")
+        password2 = getpass.getpass("Please re-enter password:\n")
+        if(password == password2 and password != ''):
+            break
+        print("Please enter the same password twice (passwords cannot be 0 characters)")
+    print('-------------------')
+    check_pw_strth(password)
+    print('-------------------')
+    return password
 
 #add support to list all passwords
 def read_password():
@@ -73,7 +88,8 @@ def update_password():
     original_username = input("Please enter the current username:\n")
     original_website = input("Please enter the current website name:\n")
     new_username = input("Please enter the new username:\n")
-    new_password = getpass.getpass("Please enter new password:\n")
+    new_password = _take_password_input()
+    # new_password = getpass.getpass("Please enter new password:\n")
     new_website = input("Please enter the new website:\n")
     if(original_username == None or original_website == None or new_password == None or new_username == None or new_website == None):
         print("No field can be left empty!")
@@ -98,3 +114,18 @@ def delete_record():
         return
     else:
         print("Successfully deleted record")
+
+def generate_secure_password():
+    length = input("Please enter a length for your secure password \n(8 characters is the minimum recommended, but longer is better)\n")
+    if(length==0):
+        print("Error, length of password cannot be 0")
+        return
+    print(gen_password(length))
+
+def check_all_pw_strth():
+    credentials = read_all_credentials()
+    #website, username, password
+    for c in credentials:
+        print(f"*************************\nUsername is {c[1]} and website is {c[0]}")
+        check_pw_strth(decrypt_password(c[2].decode()))
+    print("*************************")
