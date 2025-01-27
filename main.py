@@ -1,16 +1,20 @@
 from cli_operations import initial_setup, print_options, add_new_password, read_password, update_password, delete_record, generate_secure_password, check_all_pw_strth
-from database import read_all_credentials, read_credentials_by_name_website, get_all
+from database import read_all_credentials, read_credentials_by_name_website, delete_credential
 from pw_operations import gen_password,check_pw_strth 
 import sys
 
-get_all()
+# delete_table()
+# get_all()
 # print(get_all())
 # check_all
 # l_pw_strth()
 # sys.exit()
-# initial_setup()
+print(read_all_credentials())
+delete_credential("Unique Username", "Unique Website")
+sys.exit()
+initial_setup()
 # print("" == None)
-#TODO password generation, strength checking, change primary key to username/website rather than id
+# TODO password generation, strength checking, change primary key to username/website rather than id
 while True:
     option = print_options()
 

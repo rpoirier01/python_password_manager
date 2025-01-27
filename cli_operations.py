@@ -1,12 +1,13 @@
 import getpass
 from bcrypt import hashpw, gensalt, checkpw
-from database import get_master_pw_hash, set_master_pw_hash, add_website_credentials, read_credentials_by_name_website, update_credentials, delete_credential, read_all_credentials
+from database import get_master_pw_hash, set_master_pw_hash, add_website_credentials, read_credentials_by_name_website, update_credentials, delete_credential, read_all_credentials, make_password_table, build_master_password_table
 from encryption import encrypt_password, decrypt_password
 from pw_operations import gen_password, check_pw_strth
 
 def initial_setup():
+    build_master_password_table()
     master_pw_hash_list = get_master_pw_hash()
-
+    make_password_table()
     if(not (master_pw_hash_list == [])):
         master_pw_hash = master_pw_hash_list[0]
         while(True): #alternative implentation of a do-while loop
@@ -40,8 +41,11 @@ def add_new_password():
         print("Error, username, password and website cannot be left empty")
         return
     enc_pw = encrypt_password(password)
-    add_website_credentials(username, enc_pw, website)
-    print("Successfully added new credentials!")
+    try:
+        add_website_credentials(username, enc_pw, website)
+        print("Successfully added new credentials!")
+    except:
+        print("Error: This record already exists, the combination of username and website MUST be unique (but you can have multiple unique usernames for the same website)")
 
 def _take_password_input():
     password = None
@@ -89,17 +93,19 @@ def update_password():
     original_website = input("Please enter the current website name:\n")
     new_username = input("Please enter the new username:\n")
     new_password = _take_password_input()
-    # new_password = getpass.getpass("Please enter new password:\n")
     new_website = input("Please enter the new website:\n")
     if(original_username == None or original_website == None or new_password == None or new_username == None or new_website == None):
         print("No field can be left empty!")
         return
     enc_password = encrypt_password(new_password)
-    if(update_credentials(original_username, original_website, new_username, enc_password, new_website)==0):
-        print("Error, no values found with that username/website combination")
-        return
-    else:
-        print("Successfully updated value")
+    try:
+        if(update_credentials(original_username, original_website, new_username, enc_password, new_website)==0):
+            print("Error: no values found with that username/website combination")
+            return
+        else:
+            print("Successfully updated value")
+    except:
+        print("Error: cannot records with identical username/website combinations")
     
 
 def delete_record():
