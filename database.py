@@ -15,7 +15,7 @@ def build_master_password_table():
     connection.close()
 
 def make_password_table():
-    #PW table 
+    #PW table
     connection = sqlite3.connect('password_manager.db')
     cursor = connection.cursor()
     cursor.execute('''
@@ -66,7 +66,7 @@ def read_credentials_by_name_website(username, website):
 def read_all_credentials():
     with sqlite3.connect('password_manager.db') as connection:
         cursor = connection.cursor()
-        cursor.execute('''SELECT website, username, password FROM credentials ''')
+        cursor.execute('''SELECT website, username, password, created_at FROM credentials ''')
         all_results = cursor.fetchall()
     return all_results
 

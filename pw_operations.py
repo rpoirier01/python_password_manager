@@ -2,7 +2,6 @@ import secrets
 import string
 from zxcvbn import zxcvbn
 
-#TODO ADD COMMAND
 def gen_password(length):
     chars = string.ascii_letters + string.digits + string.punctuation
     password = ''
@@ -11,6 +10,7 @@ def gen_password(length):
     # print(password)
     return password
 
+#returns true if secure, false if not
 def check_pw_strth(pw):
     pw_strth = zxcvbn(pw)
     # print(f"Score: {pw_strth['score']}, Feedback: {pw_strth['feedback']}")
@@ -19,5 +19,7 @@ def check_pw_strth(pw):
         for sgs in pw_strth['feedback']['suggestions']:
             print('\t' + sgs)
         print("Alternatively, you can generate a secure password with: python main gen")
+        return False
     else:
         print("This password is secure")
+        return True

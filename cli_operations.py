@@ -3,6 +3,7 @@ from bcrypt import hashpw, gensalt, checkpw
 from database import get_master_pw_hash, set_master_pw_hash, add_website_credentials, read_credentials_by_name_website, update_credentials, delete_credential, read_all_credentials, make_password_table, build_master_password_table
 from encryption import encrypt_password, decrypt_password
 from pw_operations import gen_password, check_pw_strth
+from splunk import master_password_error_log, successful_master_login_log, new_password_added_log, user_added_insecure_pw_log, user_updated_insecure_pw_log, user_updated_secure_pw_log
 
 def initial_setup():
     build_master_password_table()
@@ -14,9 +15,12 @@ def initial_setup():
             entered_pw = getpass.getpass("Please enter master password to unlock password manager: ")
             if(checkpw(entered_pw.encode(), master_pw_hash)):
                 print("Correct password entered, access granted!")
+                successful_master_login_log()
                 break
             else:
                 print("Incorrect password entered, try again")
+                master_password_error_log()
+
     else:
         print("Before using the program, a master password must be set")
         master_pw_unhashed = getpass.getpass("Please enter a new master password: ")
@@ -34,8 +38,8 @@ Would you like to create a new password(C), read a password(R), update a passwor
 def add_new_password():
     print("To add a new password, a username, password and website are required")
     username = input("Please enter username:\n")
-    password = _take_password_input()
-
+    password, secure = _take_password_input()
+    
     website = input("Please enter the website:\n")
     if(username == None or password == None or website == None):
         print("Error, username, password and website cannot be left empty")
@@ -44,6 +48,10 @@ def add_new_password():
     try:
         add_website_credentials(username, enc_pw, website)
         print("Successfully added new credentials!")
+        if(secure):
+            new_password_added_log(username, website)
+        else:
+            user_added_insecure_pw_log(username, website)
     except:
         print("Error: This record already exists, the combination of username and website MUST be unique (but you can have multiple unique usernames for the same website)")
 
@@ -57,11 +65,10 @@ def _take_password_input():
             break
         print("Please enter the same password twice (passwords cannot be 0 characters)")
     print('-------------------')
-    check_pw_strth(password)
+    is_secure = check_pw_strth(password)
     print('-------------------')
-    return password
+    return password, is_secure
 
-#add support to list all passwords
 def read_password():
     print("To read a password, a username and website is required")
     username = input("Please enter a username or type ALL for all password records:\n")
@@ -84,7 +91,7 @@ def read_password():
         print("Error no credentials found with that website and username")
         return
     password = decrypt_password(credentials[2])
-    print("Credentials for this site:\nwebsite: " + credentials[0] + "\nUsername: " + credentials[1] +  "\nPassword: " + str(password) )
+    print("Credentials for this site:\nwebsite: " + credentials[0] + "\nUsername: " + credentials[1] +  "\nPassword: " + str(password))
     # print("Credentials for that site are: \n" + str(credentials))
 
 def update_password():
@@ -92,9 +99,9 @@ def update_password():
     original_username = input("Please enter the current username:\n")
     original_website = input("Please enter the current website name:\n")
     new_username = input("Please enter the new username:\n")
-    new_password = _take_password_input()
+    new_password, new_pass_secure = _take_password_input()
     new_website = input("Please enter the new website:\n")
-    if(original_username == None or original_website == None or new_password == None or new_username == None or new_website == None):
+    if(original_username == "" or original_website == "" or new_password == "" or new_username == "" or new_website == ""):
         print("No field can be left empty!")
         return
     enc_password = encrypt_password(new_password)
@@ -103,6 +110,10 @@ def update_password():
             print("Error: no values found with that username/website combination")
             return
         else:
+            if(new_pass_secure):
+                user_updated_secure_pw_log(new_username, new_website)
+            else:
+                user_added_insecure_pw_log(new_username, new_website)
             print("Successfully updated value")
     except:
         print("Error: cannot records with identical username/website combinations")
@@ -135,3 +146,4 @@ def check_all_pw_strth():
         print(f"*************************\nUsername is {c[1]} and website is {c[0]}")
         check_pw_strth(decrypt_password(c[2].decode()))
     print("*************************")
+
